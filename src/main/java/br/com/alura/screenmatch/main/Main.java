@@ -3,12 +3,14 @@ package br.com.alura.screenmatch.main;
 import br.com.alura.screenmatch.model.DadosEpisodio;
 import br.com.alura.screenmatch.model.DadosSerie;
 import br.com.alura.screenmatch.model.DadosTemporada;
+import br.com.alura.screenmatch.model.Episodio;
 import br.com.alura.screenmatch.service.ConsumoApi;
 import br.com.alura.screenmatch.service.ConverteDados;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main {
     private Scanner sc = new Scanner(System.in);
@@ -41,8 +43,41 @@ public class Main {
 //            }
 //        }
 
-        temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println(e.titulo())));
+//        temporadas.forEach(t -> t.episodios().forEach(e -> System.out.println(e.titulo())));
+
+        List<DadosEpisodio> dadosEpisodios = temporadas.stream()
+                .flatMap(t -> t.episodios().stream())
+                .collect(Collectors.toList());
+//        Top 5 episodios
+        System.out.println("\nTop 5 episodios");
+        dadosEpisodios.stream() //Stream dos dadosepisodios
+                .filter(e -> !e.avaliacao().equalsIgnoreCase("N/A")) // a avaliacao nao pode ser "N/A"
+                .sorted(Comparator.comparing(DadosEpisodio::avaliacao).reversed()) //Ajeita passando o comparador como a avaliacao em reverse, ou seja: 5,4,3,2,1,0.
+                .limit(5) // Vai pegar no maximo 5 dadosEpisodio
+                .forEach(System.out::println); // e para cada um deles, faca um sout
+
+        List<Episodio> episodio = temporadas.stream()
+                .flatMap(t -> t.episodios().stream()
+                        .map(d -> new Episodio(t.numero(), d))
+                ).collect(Collectors.toList());
+
+//        episodio.forEach(System.out::println);
+
+
+        System.out.println("A partir de que ano vc deseja ver os episodios ");
+        var ano = sc.nextInt();
+        sc.nextLine();
+
+        LocalDate dataBusca = LocalDate.of(ano, 1, 1);
+
+
+        DateTimeFormatter formatador = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        episodio.stream()
+                .filter(e -> e.getDataLancamento() != null && e.getDataLancamento().isAfter(dataBusca))
+                .forEach(e -> System.out.println(
+                        "Temporada: " + e.getTemporada() +
+                                "Episodio: " + e.getTitulo() +
+                                    "Data lancamento: " + e.getDataLancamento().format(formatador)
+                ));
     }
-
-
 }
